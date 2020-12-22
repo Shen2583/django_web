@@ -64,7 +64,7 @@ You should consider upgrading via the 'python -m pip install --upgrade pip' comm
 (mysite) C:\venvs\mysite\Scripts> python -m pip install --upgrade pip
 ```
 pip도 최신버전으로 잘 설치가 되었습니다.
-### 12 월 22일
+## 12 월 22일
 - 명령 프롬폼트는 CMD 안에서 작성해 주시기 바랍니다.
 - 코드 실행시 정확한 경로에서 실행하셔야 합니다.
 ### 프로젝트 디렉터리
