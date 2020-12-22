@@ -134,5 +134,4 @@ Quit the server with CTRL-BREAK.
 - 개발 서버는 127.0.0.0, 즉 localhost(로컬호스트)로 실행되므로 로컬 서버라 부르기도 합니다.
 - 127.0.0.1과 localhost 는 현재 컴퓨터를 가리키는 아이피 주소입니다.
 ### runserver 실행 후 웹사이트 모습
-
-![](/img/runserver.png)
+![](/img/runserver.png)햣 
