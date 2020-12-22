@@ -133,4 +133,4 @@ Quit the server with CTRL-BREAK.
 그러면 장고가 기본으로 만든 웹 사이트 화면을 볼 수 있습니다.
 - 개발 서버는 127.0.0.0, 즉 localhost(로컬호스트)로 실행되므로 로컬 서버라 부르기도 합니다.
 - 127.0.0.1과 localhost 는 현재 컴퓨터를 가리키는 아이피 주소입니다.
-![runserver.png]
+![](/img/runserver.png)
