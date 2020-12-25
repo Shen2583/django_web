@@ -70,9 +70,7 @@ You should consider upgrading via the 'python -m pip install --upgrade pip' comm
 (mysite) C:\venvs\mysite\Scripts> python -m pip install --upgrade pip
 ```
 pip도 최신버전으로 잘 설치가 되었습니다.
-## 12 월 22일
-- 명령 프롬폼트는 CMD 안에서 작성해 주시기 바랍니다.
-- 코드 실행시 정확한 경로에서 실행하셔야 합니다.
+
 ### 프로젝트 디렉터리
 프로젝트 루트 생성하기(C 드라이브에 프로젝트를 담을 루트 디렉터리를 생성)
 - 명령 프롬프트
@@ -216,9 +214,19 @@ mysite 명령(배치 파일 이름)을 실행하여 가상 환경에 잘 진입�
 ```
 - 명령 프롬프트: c:\Users\user\projects>mysite.cmd
 
-![](/img/mysite.cmd.png)
+![](/img/파이참설치01.png)
 
-111
+### 파이참 설치
+- 윈도우용 파이참 설치 : https://www.jetbrains.com/ko-kr/pycharm/download/#section=windows
+
+```python
+<Professional>과 <Community> 중 무료 버전인 <Community>를 선택하자. 파이참 설치 파일을 내려받은 후 설치를 진행하자.
+설치할 때 특별히 주의할 점은 없으므로 끝까지 <Next>를 선택하여 설치하면 된다.
+```
+![](/img/파이참설치01.png)
+
+
+
 
 
 
