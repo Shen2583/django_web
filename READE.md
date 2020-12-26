@@ -450,3 +450,179 @@ urlpatterns = [
 views.index는 views.py 파일의 index 함수를 의미한다. 장고는 이런 식으로 URL과 뷰 함수를 매핑했다.
 
 ![](/img/연결.png)
+
+### config/urls.py 다시 살펴보기
+```python
+그런데 여러분이 urlpatterns에 입력한 URL은 웹 브라우저에 입력한 localhost:8000/pybo에서 호스트명 localhost와 포트 번호 :8000이 생략된 pybo/이다.
+호스트명과 포트는 장고가 실행되는 환경에 따라 변하는 값이며 장고가 이미 알고 있는 값이다. 
+그러므로 urlpatterns에는 호스트명과 포트를 입력하지 않는다.
+```
+- urls.py 파일의 urlpatterns
+```python
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('pybo/', views.index),
+]
+```
+```python
+그리고 pybo에 슬래시 /를 붙여 입력한 점에도 주목하자! 슬래시를 붙이면 사용자가 슬래시 없이 주소를 입력해도 장고가 자동으로 슬래시를 붙여 준다.
+이는 URL을 정규화하는 장고의 기능 덕분이다. 
+아무튼! 특별한 경우가 아니라면 URL 매핑에는 호스트명과 포트를 생략하고 끝에는 슬래시를 붙이자.
+```
+- 웹 브라우저 주소창에 localhost:8000/pybo라고 입력하면 장고가 자동으로 localhost:8000/pybo/와 같이 슬래시를 붙여 준다.
+```python
+프로젝트 디렉터리는 BASE_DIR 변수에 저장되어 있다.
+
+여러분의 파이보 프로젝트 디렉터리는 C:/projects/mysite일 것이다. 장고는 이 경로를 settings.py 파일의 BASE_DIR 변수에 저장한다. 이 책에서는 파일 경로를 언급할 때 BASE_DIR을 생략한다. 
+예를 들어 config/urls.py라 언급하면 BASE_DIR의 값인 C:/projects/mysite가 생략된 것이므로 실제 언급하는 파일 위치는 C:/projects/mysite/config/urls.py이다.
+```
+
+### 오류 메시지 확인하기
+```python
+다시 localhost:8000/pybo/ 에 접속해 보자. 그러면 웹 브라우저에 
+'사이트에 연결할 수 없음' 오류가 표시되고, 개발 서버에는 다음과 같은 오류가 표시된다.
+```
+- 명령 프롬프트
+```python
+(... 생략 ...)
+  File "c:\projects\mysite\config\urls.py", line 23, in <module>
+    path('pybo/', views.index),
+AttributeError: module 'pybo.views' has no attribute 'index'
+```
+config/urls.py 파일을 수정했음에도 이런 오류가 발생한 이유는 URL 매핑에 추가한 뷰 함수인 views.index가 없기 때문이다.
+
+### pybo/views.py 작성하기
+pybo/views.py 파일에 index 함수를 추가하자.
+
+- 파일이름: c:\projects\mysite\pybo\views.py
+```python
+# ---------------------------------- [edit] ---------------------------------- #
+from django.http import HttpResponse
+
+
+def index(request):
+    return HttpResponse("안녕하세요 pybo에 오신것을 환영합니다.")
+# ---------------------------------------------------------------------------- #
+```
+- index 함수의 매개변수 request는 장고에 의해 자동으로 전달되는 HTTP 요청 객체이다.
+- request는 사용자가 전달한 데이터를 확인할 때 사용된다.
+```python
+return 문에 사용된 HttpResponse는 페이지 요청에 대한 응답을 할 때 사용하는 장고 클래스이다. 
+여기서는 HttpResponse에 "안녕하세요 pybo에 오신것을 환영합니다."라는 
+문자열을 전달하여 이 문자열이 웹 브라우저에 그대로 출력되도록 만들었다.
+```
+
+### 첫 번째 장고 프로그램 완성!
+이제 /pybo/ 페이지에 접속하면 웹 브라우저에 "안녕하세요 pybo에 오신것을 환영합니다."라는 문자열이 출력된다.
+
+![](/img/장고01.png)
+
+### 장고 개발 흐름 정리하기
+```python
+지금까지 여러분이 경험한 개발 과정은 모든 실습 과정에서 여러 번 반복될 것이다. 그만큼 이 과정은 중요하다!
+다음 그릠으로 개발 과정을 정리해 보자.
+```
+
+![](/img/정리.png)
+
+- 웹 브라우저 주소창에 localhost:8000/pybo 입력(장고 개발 서버에 /pybo 페이지 요청).
+- config/urls.py 파일에서 URL을 해석해 pybo/views.py 파일의 index 함수 호출.
+- pybo/views.py 파일의 index 함수를 실행하고 그 결과를 웹 브라우저에 전달.
+```python
+사용자가 /pybo 페이지를 요청하면 장고 개발 서버가 URL을 분석해, URL에 매핑된 함수를 호출하고, 함수 실행 결과를 웹 브라우저 화면에 전달한다. 
+이 과정을 기억하며 실습을 진행하자.
+```
+
+### URL 분리하기
+### config/urls.py 다시 살펴보기
+```python
+config/urls.py 파일을 다시 한번 살펴보자. 아까 얘기했듯이 pybo 앱 관련 파일은 대부분 pybo 디렉터리에 있다. 
+하지만 매핑을 위한 urls.py 파일은 pybo 디렉터리에 없다. 
+그러므로 pybo 앱에 URL 매핑을 추가하려면 pybo 디렉터리가 아닌 
+config 디렉터리에 있는 urls.py 파일을 수정해야 한다.
+```
+- [파일이름: C:/projects/mysite/config/urls.py]
+```python
+from django.contrib import admin
+from django.urls import path
+from pybo import views
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('pybo/', views.index),
+]
+```
+이 방식은 프로젝트의 짜임새를 전혀 고려하지 않은 것이다.pybo 앱 관련 urls.py 파일을 따로 구성할 수 있는
+방법은 없을까? 물론 있다.
+
+### config/urls.py 수정하기
+include 함수를 임포트해 pybo/의 URL 매핑을 path('pybo/', views.index)에서 path('pybo/', include('pybo.urls'))로 수정하자.
+- [파일이름: c:\projects\mysite\config\urls.py]
+```python
+from django.contrib import admin
+# ---------------------------------- [edit] ---------------------------------- #
+from django.urls import path, include
+# ---------------------------------------------------------------------------- #
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+# ---------------------------------- [edit] ---------------------------------- #
+    path('pybo/', include('pybo.urls')),
+# ---------------------------------------------------------------------------- #    
+]
+```
+```python
+path('pybo/', include('pybo.urls'))는 pybo/로 시작되는 페이지 요청은 모두 pybo/urls.py 파일에 있는 URL 매핑을 참고하여 처리하라는 의미이다. 다시 말해 pybo 앱과 관련된 URL 요청은 앞으로 pybo/urls.py 파일에서 관리하라는 뜻이다. 
+다음 예와 같이 pybo/로 시작하는 요청은 config/urls.py 파일이 아닌 pybo/urls.py 파일을 통해 처리하게 된다.
+```
+
+![](/img/정리02.png)
+
+### pybo/urls.py 생성하기
+```python
+pybo 앱 디렉터리에 urls.py 파일을 생성하자. 
+[pybo → 마우스 오른쪽 클릭 → New → File]을 한 다음 파일명으로 urls.py를 입력하자. 
+이때 파일명에는 반드시 확장자 .py가 포함되어야 한다.
+```
+
+![](/img/생성.png)
+
+- [pybo/에 새 파일 만들기]
+
+![](/img/새파일.png)
+
+###  pybo/urls.py 수정하기
+pybo/urls.py 파일을 다음과 같이 수정하자.
+- [파일이름: C:\projects\mysite\pybo\urls.py]
+```python
+# ---------------------------------- [edit] ---------------------------------- #
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path('', views.index),
+]
+# ---------------------------------------------------------------------------- #
+```
+코드 내용은 기존 config/urls.py 파일과 다르지 않다. 
+다만 path('', views.index) 입력 부분만 다르다. 
+config/urls.py 파일에서 pybo/에 대한 처리를 한 상태에서 pybo/urls.py 파일이 실행되므로 
+첫 번째 매개변수에 pybo/가 아닌 빈 문자열('')을 인자로 넘겨준 것이다.
+
+![](/img/정리03.png)
+
+다시 /pybo/에 접속해 보자. 다음 화면이 나오면 잘 접속된 것이다.
+
+![](/img/정리04.png)
+
+다음 그림은 장고가 config/urls.py, pybo/urls.py 파일 순서로 살펴보며 URL 매핑을 찾는 과정을 보여준다.
+
+![](/img/정리05.png)
+
+이 과정을 이해하는 것은 무척 중요하므로 다른 예로도 설명해 보겠다. 
+만약 pybo/urls.py 파일에 path('question/create/', ...)가 추가 된다면 
+config/urls.py 파일과 pybo/urls.py 파일에 의해 최종 매핑되는 URL은 pybo/question/create/가 될 것이다.
+
+### 2-02 데이터를 관리하는 모델
+### migrate와 테이블 알아보기
