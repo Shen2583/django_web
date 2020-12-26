@@ -33,7 +33,7 @@ ALLOWED_HOSTS = ['3.34.220.50']
 INSTALLED_APPS = [
     'Hello.apps.HelloConfig',
     'django.contrib.admin',
-    'django.contrib.auth', # 로그인,로그아웃 기능 #
+    'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
