@@ -625,7 +625,9 @@ config/urls.py 파일에서 pybo/에 대한 처리를 한 상태에서 pybo/urls
 config/urls.py 파일과 pybo/urls.py 파일에 의해 최종 매핑되는 URL은 pybo/question/create/가 될 것이다.
 
 ### 2-02 데이터를 관리하는 모델
+
 ### migrate와 테이블 알아보기
+
 ### 장고 개발 서버 구동 시 나오는 경고 메시지 살펴보기
 모델을 알아보기 위해 python manage.py runserver 명령 실행 시 나오는 경고 메시지를 조금 더 자세히 살펴보자. 
 중간쯤에 있는 경고 메시지를 보면 "아직 적용되지 않은 18개의 migration이 있다"고 한다.
@@ -645,7 +647,9 @@ Starting development server at http://127.0.0.1:8000/
 Quit the server with CTRL-BREAK.
 ```
 migration이 무엇인지 아직은 잘 모를 것이다. 
-하지만 적어도 이 경고 메시지가 admin, auth, contenttypes, sessions 앱과 관련된 내용이며, 이 오류를 해결하려면 python manage.py migrate를 실행해야 한다는 안내는 확인할 수 있다.
+하지만 적어도 이 경고 메시지가 admin, auth, contenttypes, sessions 앱과 관련된 내용이며, 
+이 오류를 해결하려면 python manage.py migrate를 실행해야 한다는 안내는 확인할 수 있다.
+
 ### config/settings.py 열어 기본으로 설치된 앱 확인하기
 ```python
 그러면 경고 메시지에 표시된 앱은 어디서 확인할 수 있고, 왜 경고 메시지에 언급되었을까? 그 이유는 config/settings.py 파일을 열어 보면 어느 정도 짐작할 수 있다. 
@@ -666,6 +670,7 @@ INSTALLED_APPS = [
 ```
 INSTALLED_APPS는 현재 장고 프로젝트에 설치된 앱이다. 경고 메시지에 언급되지 않은 messages, staticfiles 앱도 보일 것이다. 
 이 앱들은 데이터베이스와 상관 없으므로 경고 메시지에 언급되지 않은 것이다.
+
 ### config/settings.py에서 데이터베이스 정보 살펴보기
 ```python
 살펴보는 김에 config/settings.py 파일을 조금 더 살펴보자. config/settings.py 파일에는 설치된 앱뿐만 아니라 사용하는 데이터베이스에 대한 정보도 정의되어 있다. DATABASES 설정 중 default의 'ENGINE' 항목을 보면 데이터베이스 엔진이 django.db.backends.sqlite3로 정의되어 있음을 알 수 있다. 
@@ -682,6 +687,7 @@ DATABASES = {
     }
 }
 ```
+
 ### migrate 명령으로 앱이 필요로 하는 테이블 생성하기
 ```python
 migrate 명령을 실행하여 경고 메시지에 있던 앱들이 필요로 하는 테이블들을 생성하자.
@@ -714,6 +720,7 @@ Running migrations:
 ```
 메시지에 대해 간단히 설명하자면 migrate를 통해 admin, auth, contenttypes, sessions 앱이 사용하는 테이블이 생성된다. 아직 여러분은 어떤 테이블이 생성되었는지 깊게 알 필요 없다. 
 왜냐하면 이 앱들을 사용하더라도 직접 테이블을 건드릴 일은 거의 없기 때문이다.
+
 ### 모델 만들기
 이제 파이보에서 사용할 모델을 만들어 보자. 
 파이보는 질문 답변 게시판이므로 질문과 답변에 해당하는 모델이 있어야 한다.
@@ -767,6 +774,7 @@ on_delete=models.CASCADE는 답변에 연결된 질문이 삭제되면 답변도
 ```
 - 장고에서 사용할 수 있는 속성은 아주 많다. 속성이 궁금하다면 장고 공식 문서에 접속하여 어떤 속성이 있는지 읽어 보자.
 - 장고 속성 공식 문서 주소: docs.djangoproject.com/en/3.0/ref/models/fields/#field-types
+
 ###  config/settings.py를 열어 pybo 앱 등록하기
 ```python
 위에서 만든 모델을 이용하여 테이블을 생성하자.
@@ -1027,6 +1035,7 @@ pybo.models.Question.DoesNotExist: Question matching query does not exist.
 filter 함수는 조건에 맞는 데이터가 없으면 그저 빈 QuerySet을 반환한다. get 함수는 반드시 1건의 데이터를 반환해야 한다는 특징이 있으므로 오류가 발생할 것이다. 
 이번에는 조금 더 유용한 데이터 조회 방법을 알아보자. 
 만약 제목에 '장고'라는 글자가 포함된 데이터를 조회하려면 어떻게 해야 할까?
+
 ### 제목의 일부를 이용하여 데이터 조회하기
 subject에 "장고"라는 문자열이 포함된 데이터를 조회하려면 조건에 subject__contains를 이용하면 된다. 
 이때 subject와 contains 사이의 언더스코어는 1개가 아니라 2개이다. 장고 셸에서 다음 코드를 입력해 보자.
@@ -1039,8 +1048,10 @@ subject__contains='장고'의 의미는 'subject 속성에 '장고'라는 문자
 자세한 filter 함수의 사용 방법은 장고 공식 문서를 참조하자.
 - 장고는 외워서 사용할 수 있는 프레임워크가 아니므로 장고 공식 문서를 자주 참고하는 습관을 들이는 것이 좋다.
 - 장고 공식 문서(데이터 조회 관련): docs.djangoproject.com/en/3.0/topics/db/queries
+
 ### 데이터 수정하기
 이번에는 지금까지 저장했던 Question 모델 데이터를 수정하자.
+
 ### Question 모델 데이터 수정하기
 Question 모델 데이터를 수정하려면 우선 수정할 데이터를 조회해야 한다. 
 다음은 id가 2인 데이터를 조회한 것이다. 이 데이터를 수정할 것이다.
@@ -1050,6 +1061,7 @@ Question 모델 데이터를 수정하려면 우선 수정할 데이터를 조�
 >>> q
 <Question: 장고 모델 질문입니다.>
 ```
+
 ### subject 속성 수정하기
 subject 속성을 수정하자.
 - [명령 프롬프트]
@@ -1065,8 +1077,10 @@ subject 속성을 수정하자.
 >>> q
 <Question: Django Model Question>
 ```
+
 ### 데이터 삭제하기
 이번에는 Question 모델 데이터를 데이터베이스에서 삭제해 보자.
+
 ### Question 모델 데이터 삭제하기
 데이터 삭제는 데이터 수정과 비슷한 과정으로 진행된다. 
 여기서는 id가 1인 Question 모델 데이터를 삭제한다.
@@ -1082,6 +1096,7 @@ delete 함수를 수행하면 해당 데이터가 데이터베이스에서 즉�
 Answer 모델을 만들 때 ForeignKey로 Question 모델과 연결한 것이 기억나는가? 만약 삭제한 Question 모델 데이터에 2개의 Answer 모델 데이터가 등록된 상태라면 (1, {'pybo.Answer': 2, 'pybo.Question': 1})
 와 같이 삭제된 답변 개수도 함께 반환될 것이다.
 ```
+
 ### 삭제 확인하기
 Question 모델 데이터가 정말로 삭제되었는지 확인해 보자.
 - [명령 프롬프트]
@@ -1090,6 +1105,7 @@ Question 모델 데이터가 정말로 삭제되었는지 확인해 보자.
 <QuerySet [<Question: Django Model Question>]>
 ```
 결과를 보면 첫 번째 질문은 삭제되고, 두 번째 질문만 남아 있다.
+
 ### 연결된 데이터 알아보기
 ```python
 앞에서 Answer 모델을 만들 때 ForeignKey로 Question 모델과 연결한 내용이 기억날 것이다. 
@@ -1109,6 +1125,7 @@ id가 2인 Question 모델 데이터를 얻은 다음, 이를 이용하여 Answe
 >>> a = Answer(question=q, content='네 자동으로 생성됩니다.', create_date=timezone.now())
 >>> a.save()
 ```
+
 ### id 확인하기
 Answer 모델 데이터에도 id가 있다.
 - [명령 프롬프트]
@@ -1116,6 +1133,7 @@ Answer 모델 데이터에도 id가 있다.
 >>> a.id
 1
 ```
+
 ### Answer 모델 데이터 조회하기
 Answer 모델 데이터를 get 함수로 조회해 보자. 조건은 id를 사용한다.
 - [명령 프롬프트]
@@ -1134,6 +1152,7 @@ Answer 모델 데이터에는 Question 모델 데이터가 연결되어 있으�
 ```
 Answer 모델 객체인 a에는 question 속성이 있으므로 a를 통해 질문을 찾는 것은 매우 쉽다. 그렇다면 반대로 질문을 통해 답변을 찾을 수 있을까? 
 Question 모델에는 답변 속성이 없어서 불가능할 것 같지만 실제로는 가능하다.
+
 ### 연결된 데이터로 조회하기: 질문을 통해 답변 찾기
 다음처럼 answer_set을 사용하면 된다.
 - [명령 프롬프트]
@@ -1151,17 +1170,15 @@ Question 모델과 Answer 모델처럼 서로 연결되어 있으면 연결모�
 질문 1개에는 1개 이상의 답변이 달릴 수 있으므로 질문에 달린 답변은 
 q.answer_set으로 조회해야 한다(답변 세트를 조회). 답변은 질문 1개에 대한 것이므로 애초에 여러 개의 질문을 조회할 수 없다. 다시 말해 답변 1개 입장에서는 질문 1개만 연결되어 있으므로 a.question만 실행할 수 있다. 1개의 답변으로 여러 개의 질문을 a.question_set으로 조회하는 것은 불가능하며, 상식적으로 생각해 보아도 이상하다. 연결모델명_set은 정말 신통방통한 장고의 기능이 아닐 수 없다. 연결모델명_set은 자주 사용할 기능이니 꼭 기억하자.
 ```
+
 ### 장고 Admin 사용하기
 장고 Admin을 사용하려면 슈퍼 유저를 먼저 생성해야 한다. 슈퍼 유저는 쉽게 말해 장고 운영자 계정이라 생각하면 된다.
+
 ###  슈퍼 유저 생성하기
 ```python
 명령 프롬프트에서 python manage.py createsuperuser 명령을 실행하여 슈퍼 유저를 생성하자. 사용자 이름에는 admin을 입력하고(다른 것을 입력해도 된다), 이메일 주소는 가상의 이메일 주소를 적는다. 
 비밀번호는 여러분이 기억하기 쉬운 것으로 입력하자.  이때 단순한 구성의 비밀번호를 입력하면 경고 메시지가 나올 텐데, 
 이를 무시하는 옵션으로 'Bypass password validation and create user anyway?'의 질문에 y를 입력해 답하자.
-```
-```python
-여기서는 학습을 위해 비밀번호를 단순하게 입력했다.
-만약 실제 사이트를 운영할 계획이라면 보안에 취약한 비밀번호는 사용하면 안 되므로 주의하자.
 ```
 - [명령 프롬프트]
 ```python
@@ -1254,3 +1271,7 @@ admin.site.register(Question, QuestionAdmin)
 장고 공식 문서 주소(장고 Admin 기능): docs.djangoproject.com/en/3.0/ref/contrib/admin
 
 ### 2-04 질문 목록과 질문 상세 기능 구현하기
+```python
+필자가 장고를 처음 접하고 가장 깜짝 놀란 기능이 바로 장고 Admin이다. 장고 Admin은 한 문장으로 표현하기 어려울 정도로 개발자에게 마법 같은 기능을 제공한다. 
+여기서는 장고 Admin에 대해 알아보자.
+```
