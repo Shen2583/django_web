@@ -1637,3 +1637,220 @@ detail에 pybo라는 네임스페이스를 붙여준 것이다.
 
 ### 답변 저장하고 표시하기
 [1] 질문 상세 템플릿에 답변 등록 버튼 만들기
+질문 상세 템플릿 pybo/question_detail.html 파일을 수정하자. 
+form 엘리먼트 안에 textarea 엘리먼트와 input 엘리먼트를 포함시켜 답변 내용, 답변 등록 버튼을 추가하자.
+* 장고 개발 시 form 데이터를 전송할 때는 보통 장고의 폼을 이용한다. 장고의 폼을 이용하는 방법은 조금 더 공부한 후 설명하겠다.
+- [파일이름: C:/projects/mysite/templates/pybo/question_detail.html]
+```python
+<h1>{{ question.subject }}</h1>
+
+<div>
+    {{ question.content }}
+</div>
+
+<!-- ------------------------------- [edit] -------------------------------- -->
+<form action="{% url 'pybo:answer_create' question.id %}" method="post">
+{% csrf_token %}
+<textarea name="content" id="content" rows="15"></textarea>
+<input type="submit" value="답변등록">
+</form>
+<!-- ----------------------------------------------------------------------- -->
+```
+```python
+<답변 등록> 버튼을 누를 때 호출되는 URL은 action 속성에 있는 {% url 'pybo:answer_create' question.id %}이다. 그리고 form 엘리먼트 바로 아래에 있는 {% csrf_token %}이 눈에 띌 것이다. 이 코드는 보안 관련 항목이니 좀 더 자세히 설명하겠다. {% csrf_token %}는 form 엘리먼트를 통해 전송된 데이터(답변)가 실제로 웹 브라우저에서 작성된 데이터인지 판단하는 검사기 역할을 한다. 
+그러므로 <form ...> 태그 바로 밑에 {% csrf_token %}을 항상 입력해야 한다. 
+해킹처럼 올바르지 않은 방법으로 데이터가 전송되면 서버에서 발행한 csrf_token값과 해커가 보낸 csrf_token값이 일치하지 않으므로 오류를 발생시켜 보안을 유지할 수 있다.
+```
+
+![](/img/csrf토큰.png)]
+
+### [2] 질문 상세 페이지에 접속해 보기
+위의 단계를 마친 다음 pybo/2에 접속해 보자. 
+그러면 아마도 'answer_create를 찾을 수 없다'는 오류 화면이 나타날 것이다.
+
+![](/img/질문상세페이지.png)]
+
+오류 발생 이유는 1단계에서 입력한 form 엘리먼트의 action 속성에 있는 
+{% url 'pybo:answer_create' question.id %}에 해당하는 URL 매핑이 없기 때문이다.
+
+### [3] 답변 등록을 위한 URL 매핑 등록하기
+pybo/urls.py 파일에 답변 등록을 위한 URL 매핑을 등록하자.
+- [파일이름: C:/projects/mysite/pybo/urls.py]
+```python
+(... 생략 ...)
+urlpatterns = [
+    path('', views.index, name='index'),
+    path('<int:question_id>/', views.detail, name='detail'),
+# ---------------------------------- [edit] ---------------------------------- #
+    path('answer/create/<int:question_id>/', views.answer_create, name='answer_create'),
+# ---------------------------------------------------------------------------- #    
+]
+(... 생략 ...)
+```
+이 코드는 사용자가 상세 화면에서 <질문답변> 버튼을 눌렀을 때 작동할 
+form 엘리먼트의 /pybo/answer/create/2/에 대한 URL 매핑을 추가한 것이다.
+
+### [4] answer_create 함수 추가하기
+form 엘리먼트에 입력된 값을 받아 데이터베이스에 저장할 수 있도록 answer_create 함수를 pybo/views.py 파일에 추가하자.
+- [파일이름: C:/projects/mysite/pybo/views.py]
+```python
+from django.shortcuts import render, get_object_or_404
+from .models import Question
+# ---------------------------------- [edit] ---------------------------------- #
+from django.utils import timezone
+
+(... 생략 ...)
+
+def answer_create(request, question_id):
+    """
+    pybo 답변등록
+    """
+    question = get_object_or_404(Question, pk=question_id)
+    question.answer_set.create(content=request.POST.get('content'), create_date=timezone.now())
+# ---------------------------------------------------------------------------- #
+```
+```python
+answer_create 함수의 question_id 매개변수에는 URL 매핑 정보값이 넘어온다. 예를 들어 /pybo/answer/create/2가 요청되면 question_id에는 2가 넘어온다. request 매개변수에는 pybo/question_detail.html에서 textarea에 입력된 데이터가 파이썬 객체에 담겨 넘어온다. 
+이 값을 추출하기 위한 코드가 바로 request.POST.get('content')이다. 
+그리고 Question 모델을 통해 Answer 모델 데이터를 생성하기 위해 question.answer_set.create를 사용했다.
+```
+- request.POST.get('content')는 POST 형식으로 전송된 form 데이터 항목 중 name이 content인 값을 의미한다.
+- Answer 모델이 Question 모델을 Foreign Key로 참조하고 있으므로 question.answer_set 같은 표현을 사용할 수 있다.
+
+![](/img/Answer모델.png)]
+
+### [5] 답변 등록 후 상세 화면으로 이동하게 만들기
+답변을 생성한 후 상세 화면을 호출하려면 redirect 함수를 사용하여 코드를 작성하면 된다. 
+redirect 함수는 함수에 전달된 값을 참고하여 페이지 이동을 수행한다. 
+redirect 함수의 첫 번째 인수에는 이동할 페이지의 별칭을, 두 번째 인수에는 해당 URL에 전달해야 하는 값을 입력한다.
+- [파일이름: C:/projects/mysite/pybo/views.py]
+```python
+# ---------------------------------- [edit] ---------------------------------- #
+from django.shortcuts import render, get_object_or_404, redirect
+# ---------------------------------------------------------------------------- #
+from .models import Question
+from django.utils import timezone
+
+(... 생략 ...)
+
+def answer_create(request, question_id):
+    """
+    pybo 답변등록
+    """
+    question = get_object_or_404(Question, pk=question_id)
+    question.answer_set.create(content=request.POST.get('content'), create_date=timezone.now())
+# ---------------------------------- [edit] ---------------------------------- #    
+    return redirect('pybo:detail', question_id=question.id)
+# ---------------------------------------------------------------------------- #
+```
+질문 상세 페이지에 다시 접속해 보자. 그러면 다음처럼 답변을 등록할 수 있는 창과 <답변등록> 버튼이 보인다.
+
+![](/img/장고화면.png)]
+
+### [6] 등록된 답변 표시하기
+질문 상세 화면에 답변을 표시하려면 pybo/question_detail.html 파일을 수정해야 한다.
+- [파일이름: C:/projects/mysite/templates/pybo/question_detail.html]
+```python
+<h1>{{ question.subject }}</h1>
+
+<div>
+    {{ question.content }}
+</div>
+
+<!-- ------------------------------- [edit] -------------------------------- -->
+<h5>{{ question.answer_set.count }}개의 답변이 있습니다.</h5>
+<div>
+    <ul>
+    {% for answer in question.answer_set.all %}
+        <li>{{ answer.content }}</li>
+    {% endfor %}
+    </ul>
+</div>
+<!-- ----------------------------------------------------------------------- -->
+
+<form action="{% url 'pybo:answer_create' question.id %}" method="post">
+{% csrf_token %}
+<textarea name="content" id="content" rows="15"></textarea>
+<input type="submit" value="답변등록">
+</form>
+```
+question.answer_set.count는 답변 개수를 의미한다. 
+질문 내용과 답변 입력 창 사이에 답변 표시 영역을 추가했다. 
+코드를 위처럼 수정한 후에 질문 상세 페이지에 접속하면 다음과 같은 화면을 볼 수 있다.
+
+![](/img/파이보화면.png)]
+
+### 2-07 스태틱화면 예쁘게 꾸미기
+지금까지 질문과 답변을 등록하고 조회하는 기능을 만들었다. 
+그런데 그럴싸한 화면이 아니라서 아쉽다. 
+여기서는 스타일시트를 이용해 웹 페이지에 디자인을 적용하는 방법을 알아본다.
+
+### 웹 페이지에 스타일시트 적용하기
+웹 페이지에 디자인을 적용하려면 스타일시트(CSS)를 사용해야 하며, 
+스타일시트를 파이보에 적용하려면 CSS 파일이 스태틱(static) 디렉터리에 있어야 한다.
+```python
+CSS 파일은 장고에서 정적(static)파일로 분류한다. 
+정적 파일은 주로 이미지(.png, .jpg)나 자바스크립트(.js), 스타일시트(.css) 같은 파일을 의미한다.
+```
+
+### [1] 설정 파일에 스태틱 디렉터리 위치 추가하기
+config/settings.py 파일을 열어 STATICFILES_DIRS에 스태틱 디렉터리 경로를 추가하자.
+BASE_DIR / 'static'은 C:/projects/mysite/static을 의미한다.
+- [파일이름: C:/projects/mysite/config/settings.py]
+```python
+(... 생략 ...)
+STATIC_URL = '/static/'
+# ---------------------------------- [edit] ---------------------------------- #
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+# ---------------------------------------------------------------------------- #
+```
+
+### [2] 스태틱 디렉터리 만들고 스타일시트 작성하기
+프로젝트 루트 디렉터리에 static이라는 이름의 디렉터리를 생성하자. 루트 디렉터리는 C:/ projects/mysite를 의미한다
+- [명령 프롬프트]
+```python
+(mysite) C:/projects/mysite>mkdir static
+```
+
+![](/img/스태틱디렉터리.png)]
+
+```python
+static 디렉터리를 만들었으면 그곳에 style.css 파일을 만들어 다음 코드를 작성하자. 
+여기서는 답변을 등록할 때 사용하는 textarea를 100%로 넓히고, <답변등록> 버튼 위에 margin을 10px 추가했다.
+```
+- [파일이름: C:/projects/mysite/static/style.css]
+```python
+/* ---------------------------------- [edit] --------------------------------- */
+textarea {
+    width:100%;
+}
+
+input[type=submit] {
+    margin-top:10px;
+}
+/* --------------------------------------------------------------------------- */
+```
+CSS를 활용하면 이보다 더 예쁘게 만들 수 있다. 그것은 필자보다 디자인 감각이 뛰어난 독자 여러분 몫으로 남겨 둔다. 
+그 대신 다음 절에서 부트스트랩을 이용해 좀 더 예쁘게 만드는 방법을 소개한다.
+
+### [3] 질문 상세 템플릿에 스타일 적용하기
+pybo/question_detail.html 파일에 style.css 파일을 적용해 보자.
+스태틱 파일을 사용하기위해 템플릿 파일 맨 위에 {% load static %} 태그를 삽입하고, 
+link 엘리먼트 href 속성에 {% static 'style.css' %}를 적자.
+- [파일이름: C:/projects/mysite/templates/pybo/question_detail.html]
+```python
+<!-- ------------------------------- [edit] -------------------------------- -->
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'style.css' %}">
+<!-- ----------------------------------------------------------------------- -->
+<h1>{{ question.subject }}</h1>
+(... 생략 ...)
+```
+추가한 코드는 static 디렉터리의 style.css 파일을 연결한다는 의미다. 
+질문 상세 화면은 다음과 같이 바뀔 것이다. 만약 아무런 변화가 없다면 개발 서버를 종료했다가 다시 실행해 보자.
+
+개발 서버를 종료하려면 <Ctrl+C>를 누르면 된다.
+
+![](/img/장고모델질문.png)]
