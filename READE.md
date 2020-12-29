@@ -1527,3 +1527,113 @@ pk에 해당하는 건이 없으면 오류 대신 404 페이지를 반환한다.
 ![](/img/4042.png)
 
 ![](/img/제네릭뷰.png)
+
+### 2-05 URL 더 똑똑하게 사용하기
+이번에는 템플릿에서 사용한 URL 하드 코딩을 없애는 방법에 대해 알아보자. 
+그나저나 URL 하드 코딩이란 무엇일까? 잠시 question_list.html 템플릿에 사용된 href값을 보자.
+- [question_list.html 템플릿의 href값]
+```python
+<li><a href="/pybo/{{ question.id }}/">{{ question.subject }}</a></li>
+```
+```python
+/pybo/{{ question.id }}는 질문 상세를 위한 URL 규칙이다. 
+하지만 이런 URL 규칙은 프로그램을 수정하면서 /pybo/question/2/ 또는 /pybo/2/question/으로 수정될 가능성도 있다. 
+이런 식으로 URL 규칙이 자주 변경된다면 템플릿에 사용된 모든 href값들을 일일이 찾아 수정해야 한다. 
+URL 하드 코딩의 한계인 셈이다. 이런 문제를 해결하려면 해당 URL에 대한 실제 주소가 아닌 
+주소가 매핑된 URL 별칭을 사용해야 한다.
+```
+
+### URL 별칭으로 URL 하드 코딩 문제 해결하기
+그러면 URL 별칭을 파이보에 적용해 보자.
+
+### [1] pybo/urls.py 수정하여 URL 별칭 사용하기
+템플릿의 href에 실제 주소가 아니라 URL 별칭을 사용하려면 우선 pybo/urls.py 파일을 수정해야 한다. 
+path 함수에 있는 URL 매핑에 name 속성을 부여하자.
+- [파일이름: C:/projects/mysite/pybo/urls.py]
+```python
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+# ---------------------------------- [edit] ---------------------------------- #
+    path('', views.index, name='index'),
+    path('<int:question_id>/', views.detail, name='detail'),
+# ---------------------------------------------------------------------------- #    
+]
+```
+이렇게 수정하면 실제 주소 /pybo/는 index라는 URL 별칭이, /pybo/2/는 detail이라는 URL 별칭이 생긴다.
+
+### [2] pybo/question_list.html 템플릿에서 URL 별칭 사용하기
+1단계에서 만든 별칭을 템플릿에서 사용하기 위해 
+/pybo/{{ question.id }}를 {% url 'detail' question.id %}로 변경하자.
+- question.id는 URL 매핑에 정의된 <int: question_id>를 의미한다.
+- [파일이름: C:/projects/mysite/templates/pybo/question_list.html]
+```python
+(... 생략 ...)
+    {% for question in question_list %}
+<!-- ------------------------------- [edit] -------------------------------- -->
+        <li><a href="{% url 'detail' question.id %}">{{ question.subject }}</a></li>
+<!-- ----------------------------------------------------------------------- -->
+    {% endfor %}
+(... 생략 ...)
+```
+
+### URL 네임스페이스 알아보기
+여기서 한 가지 더 생각할 문제가 있다. 
+현재의 프로젝트에서는 pybo 앱 하나만 사용하지만, 이후 pybo 앱 이외의 다른 앱이 프로젝트에 추가될 수도 있다. 
+이때 서로 다른 앱에서 같은 URL 별칭을 사용하면 중복 문제가 생긴다.
+
+![](/img/URL별칭.png)
+
+이 문제를 해결하려면 pybo/urls.py 파
+일에 네임스페이스(namespace)라는 개념을 도입해야 한다. 
+네임스페이스는 쉽게 말해 각각의 앱이 관리하는 독립된 이름 공간을 말한다.
+
+### [1] pybo/urls.py에 네임스페이스 추가하기
+pybo/urls.py 파일에 네임스페이스를 추가하려면 간단히 app_name 변수에 네임스페이스 이름을 저장하면 된다.
+- [파일이름: C:/projects/mysite/pybo/urls.py]
+```python
+from django.urls import path
+
+from . import views
+
+# ---------------------------------- [edit] ---------------------------------- #
+app_name = 'pybo'
+# ---------------------------------------------------------------------------- #
+
+urlpatterns = [
+    path('', views.index, name='index'),
+    path('<int:question_id>/', views.detail, name='detail'),
+]
+```
+네임스페이스 이름으로 'pybo'를 저장했다.
+]
+
+### [2] 네임스페이스 테스트하기 - 오류 발생!
+/pybo/에 접속해 보자. 그러면 다음과 같은 오류가 발생한다.
+
+![](/img/네임스페이스오류.png)]
+
+### [3] pybo/question_list.html 수정하기
+오류가 발생한 이유는 템플릿에서 아직 네임스페이스를 사용하고 있지 않기 때문이다. {% url 'detail' question.id %}을 {% url
+'pybo:detail' question.id %}으로 바꾸자.
+- [파일이름: C:/projects/mysite/templates/pybo/question_list.html]
+```python
+(... 생략 ...)
+    {% for question in question_list %}
+<!-- ------------------------------- [edit] -------------------------------- -->
+        <li><a href="{% url 'pybo:detail' question.id %}">{{ question.subject }}</a></li>
+<!-- ----------------------------------------------------------------------- -->        
+    {% endfor %}
+(... 생략 ...)
+```
+detail에 pybo라는 네임스페이스를 붙여준 것이다.
+
+![](/img/URL별칭사용.png)]
+
+### 2-06 답변 등록 기능 만들기
+앞에서 질문 등록, 조회 기능을 만들었다. 이번에는 답변 등록과 답변을 보여주는 기능을 만들어 보자.
+
+### 답변 저장하고 표시하기
+[1] 질문 상세 템플릿에 답변 등록 버튼 만들기
