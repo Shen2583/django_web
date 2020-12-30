@@ -3001,3 +3001,25 @@ def sub(value, arg):
 ![](/img/제대로된페이지.png)]
 
 ### 3-04 질문에 달린 답변 개수 표시하기
+
+### 질문에 달린 답변의 개수 표시하기
+답변 개수는 다음처럼 게시물 제목 바로 오른쪽에 표시하자.
+- [파일명: C:\projects\mysite\templates\pybo\question_list.html]
+```python
+(... 생략 ...)
+<td>
+    <a href="{% url 'pybo:detail' question.id %}">{{ question.subject }}</a>
+<!-- ------------------------------- [edit] -------------------------------- -->
+    {% if question.answer_set.count > 0 %}
+    <span class="text-danger small ml-2">{{ question.answer_set.count }}</span>
+    {% endif %}
+<!-- ----------------------------------------------------------------------- -->
+</td>
+<...>
+```
+{% if question.answer_set.count > 0 %}로 답변이 있는 경우를 검사하고, {{ question.answer_set.count }}로 답변 개수를 표시했다. 
+이제 답변이 있는 질문은 제목 오른쪽에 빨간색 숫자가 표시된다.
+
+![](/img/질문답변개수.png)]
+
+### 
