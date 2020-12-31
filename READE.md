@@ -3562,3 +3562,217 @@ common/signup.html 파일을 생성한 다음 아래와 같이 작성하자.
 ![](/img/추가된계정.png)
 
 ### 3-07 모델에 글쓴이 추가하기
+회원가입, 로그인, 로그아웃 기능이 완성되어 질문과 답변을 '누가' 작성했는지 알 수 있게 되었다. 
+이제 기능을 조금씩 다듬어서 파이보를 완벽하게 만들어 보자. 
+여기서는 Question, Answer 모델을 수정하여 '글쓴이'에 해당하는 author 필드를 추가할 것이다.
+
+### Question 모델 수정하기
+### [1] Question 모델에 author 필드 추가하기
+Question 모델에 author 필드를 추가하자.
+- [파일명: C:\projects\mysite\pybo\models.py]
+```python
+# ---------------------------------- [edit] ---------------------------------- #
+from django.contrib.auth.models import User
+# ---------------------------------------------------------------------------- #
+(... 생략 ...)
+
+class Question(models.Model):
+# ---------------------------------- [edit] ---------------------------------- #
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+# ---------------------------------------------------------------------------- #
+    (... 생략 ...)
+```
+author 필드는 User 모델을 ForeignKey로 적용하여 선언했다. 
+User 모델은 django.contrib.auth 앱이 제공하는 모델이다. 
+on_delete=models.CASCADE는 계정이 삭제되면 계정과 연결된 Question 모델 데이터를 모두 삭제하라는 의미이다.
+
+![](/img/User모델.png)
+
+### [2] makemigrations 명령 실행하고 author 필드 추가 문제 해결하기
+모델을 수정했으므로 makemigrations 명령과 migrate 명령을 실행해야 한다. 
+그런데 makemigrations 명령을 실행하면 다음 메시지를 볼 수 있다.
+- [명령 프롬프트]
+```python
+(mysite) c:\projects\mysite>python manage.py makemigrations
+You are trying to add a non-nullable field 'author' to question without a default; we can't do that (the database needs something to populate existing rows).
+Please select a fix:
+ 1) Provide a one-off default now (will be set on all existing rows with a null value for this column)
+ 2) Quit, and let me add a default in models.py
+Select an option: 
+```
+```python
+이 메시지가 나타난 이유는 Question 모델에 author 필드를 추가하면 이미 등록되어 있던 게시물에 
+author 필드에 해당되는 값이 저장되어야 하는데, 장고는 author 필드에 어떤 값을 넣어야 하는지 모르기 때문이다.
+그래서 장고가 여러분에게 기존에 저장된 Question 모델 데이터에는 author 필드값으로 어떤 값을 저장해야 하는지 묻는 것이다.
+
+이 문제를 해결하는 방법에는 2가지가 있다. 
+첫 번째 방법은 author 필드를 null로 설정하는 방법이고, 두 번째 방법은 기존 게시물에 추가될 author 필드의 값에 
+강제로 임의 계정 정보를 추가하는 방법이다. 질문, 답변에는 author 필드값이 무조건 있어야 하므로 두 번째 방법을 사용할 것이다. 
+위 메시지를 유지한 상태에서 '1'을 입력하자.
+```
+- [명령 프롬프트]
+```python
+Select an option: 1
+Please enter the default value now, as valid Python
+The datetime and django.utils.timezone modules are available, so you can do e.g. timezone.now
+Type 'exit' to exit this prompt
+>>>     
+```
+그러면 파이썬 셸이 다음처럼 구동된다. 여기서 '1'을 입력하자. 그러면 makemigrations가 완료되고 파이썬 셸이 종료된다.
+- [명령 프롬프트]
+```python
+>>> 1
+Migrations for 'pybo':
+  pybo\migrations\0002_question_author.py
+    - Add field author to question
+
+(mysite) c:\projects\mysite> 
+```
+파이썬 셸에서 입력한 '1'은 최초 생성했던 슈퍼 유저의 id값이므로 기존 게시물의 author에는 슈퍼 유저가 등록될 것이다.
+
+### [3] migrate 명령 실행하기
+이제 migrate 명령으로 변경된 내용을 데이터베이스에 적용하자.
+- [명령 프롬프트]
+```python
+(mysite) c:\projects\mysite>python manage.py migrate
+Operations to perform:
+  Apply all migrations: admin, auth, contenttypes, pybo, sessions
+Running migrations:
+  Applying pybo.0002_question_author... OK`
+```
+
+### Answer 모델 수정하기
+### [1] Answer 모델에 author 필드 추가하고 문제 해결하기
+Question 모델과 같은 방법으로 Answer 모델에 author 필드를 추가하자.
+- [파일명: C:/projects/mysite/pybo/models.py]
+```python
+(... 생략 ...)
+
+class Answer(models.Model):
+# ---------------------------------- [edit] ---------------------------------- #
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+# ---------------------------------------------------------------------------- #
+    (... 생략 ...)
+```
+이어서 makemigrations 명령을 실행한 다음, Question 모델에 했던 것과 마찬가지로 파이썬 셸 작업을 진행하자.
+- [명령 프롬프트]
+```python
+(mysite) c:\projects\mysite>python manage.py makemigrations
+You are trying to add a non-nullable field 'author' to answer without a default; we can't do that (the database needs something to populate existing rows).
+Please select a fix:
+ 1) Provide a one-off default now (will be set on all existing rows with a null value for this column)
+ 2) Quit, and let me add a default in models.py
+Select an option: 1
+Please enter the default value now, as valid Python
+The datetime and django.utils.timezone modules are available, so you can do e.g. timezone.now
+Type 'exit' to exit this prompt
+>>> 1
+Migrations for 'pybo':
+  pybo\migrations\0003_answer_author.py
+    - Add field author to answer
+```
+이어서 migrate 명령을 실행하자.
+- [명령 프롬프트]
+```python
+(mysite) c:\projects\mysite>python manage.py migrate
+Operations to perform:
+  Apply all migrations: admin, auth, contenttypes, pybo, sessions
+Running migrations:
+  Applying pybo.0003_answer_author... OK
+
+(mysite) c:\projects\mysite> 
+```
+여기까지 잘 진행되면 이상 없이 잘 처리된 것이다.
+
+![](/img/author필드.png)
+
+### author 필드 적용하기
+이제 Question, Answer 모델에 author 필드가 추가되었으므로 질문 등록시에 author 필드를 추가해야 한다.
+* 질문, 답변에 글쓴이를 추가한다는 느낌으로 작업을 진행하자.
+
+### [1] 답변 등록 함수 수정하기
+answer_create 함수를 수정하자.
+
+- [파일명: C:\projects\mysite\pybo\views.py]
+```python
+def answer_create(request, question_id):
+    (... 생략 ...)
+        if form.is_valid():
+            answer = form.save(commit=False)
+# ---------------------------------- [edit] ---------------------------------- #
+            answer.author = request.user  # 추가한 속성 author 적용
+# ---------------------------------------------------------------------------- #
+            (... 생략 ...)
+    (... 생략 ...)
+```
+답변 글쓴이는 현재 로그인한 계정이므로 answer.author = request.user로 처리했다. 
+request.user가 바로 현재 로그인한 계정의 User 모델 객체이다.
+
+### [2] 질문 등록 함수 수정하기
+question_create 함수도 마찬가지 방법으로 수정하자.
+- [파일명: C:\projects\mysite\pybo\views.py]
+```python
+def question_create(request):
+    (... 생략 ...)
+        if form.is_valid():
+            question = form.save(commit=False)
+# ---------------------------------- [edit] ---------------------------------- #
+            question.author = request.user  # 추가한 속성 author 적용
+# ---------------------------------------------------------------------------- #
+    (... 생략 ...)
+```
+질문 글쓴이도 question.author = request.user로 처리했다. 이제 다시 개발 서버를 시작하고 로그인한 다음 질문 · 답변 등록을 테스트해보자. 잘 될 것이다.
+
+- 개발 서버 종료는 <Ctrl+C>를 누르면 된다.
+- 개발 서버 시작은 projects/mysite에서 python manage.py runserver 명령을 실행하면 된다.
+
+### 로그인이 필요한 함수 설정하기
+### [1] 로그아웃 상태에서 질문, 답변 등록해 보기
+로그아웃 상태에서 질문 또는 답변을 등록하면 다음과 같은 ValueError 오류가 발생한다. 
+오류는 웹 브라우저, 명령 프롬프트 양쪽에서 모두 확인할 수 있다. 로그아웃 상태에서 직접 오류를 발생시켜 보자.
+
+![](/img/로그아웃상태질문.png)
+
+- [명령 프롬프트]
+```python
+(... 생략 ...)
+ValueError at /pybo/question/create/
+Cannot assign "<SimpleLazyObject: <django.contrib.auth.models.AnonymousUser object at 0x05491FE8>>": "Question.author" must be a "User" instance.
+(... 생략 ...)
+```
+```python
+이 오류는 request.user가 User 객체가 아닌 AnonymousUser 객체라서 발생한 것이다. 
+조금 더 자세히 설명하자면 request.user에는 로그아웃 상태이면 AnonymousUser 객체가,
+로그인 상태이면 User 객체가 들어있는데, 앞에서 우리는 author 필드를 정의할 때 User를 이용하도록 했다. 
+그래서 answer.author = request.user에서 User 대신 AnonymousUser가 대입되어 오류가 발생한 것이다.
+```
+
+### [2] 로그인이 필요한 함수에 @login_required 애너테이션 적용하기
+이 문제를 해결하려면 로그인이 필요한 함수 answer_create, question_create에 @login_required 애너테이션을 사용해야 한다.
+- [파일명: C:\projects\mysite\pybo\views.py]
+```python
+# ---------------------------------- [edit] ---------------------------------- #
+from django.contrib.auth.decorators import login_required
+# ---------------------------------------------------------------------------- #
+(... 생략 ...)
+
+# ---------------------------------- [edit] ---------------------------------- #
+@login_required(login_url='common:login')
+# ---------------------------------------------------------------------------- #
+def answer_create(request, question_id):
+    (... 생략 ...)
+
+# ---------------------------------- [edit] ---------------------------------- #
+@login_required(login_url='common:login')
+# ---------------------------------------------------------------------------- #
+def question_create(request):
+    (... 생략 ...)
+```
+```python
+쉽게 말해 answer_create 함수와 question_create 함수는 request.user를 포함하고 있으므로 
+@login_required 애너테이션을 통해 로그인이 되었는지를 우선 검사하여 앞 단계에서 본 오류를 방지한다. 
+만약 로그아웃 상태에서 @login_required 애너테이션이 적용된 함수가 호출되면 자동으로 로그인 화면으로 이동할 것이다. 
+@login_required 애너테이션의 login_url은 이동해야 할 로그인 화면의 URL을 의미한다. 코드 수정 후 로그아웃 상태에서 질문 등록, 답변을 등록을 시도하면 로그인 화면으로 이동되는지 확인해 보자.
+```
+
+### [3] URL의 next 인자로 로그인 성공 후 이동할 URL 지정하기
