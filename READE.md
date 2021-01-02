@@ -3828,3 +3828,240 @@ def question_create(request):
 게시판의 게시물에는 '글쓴이'를 표시하는 것이 일반적이다. 
 질문 목록, 질문 상세 화면에 auther 필드를 이용하여 글쓴이를 표시해 보자.
 ```
+
+### 질문 목록 화면에 글쓴이 표시하기
+### [1] 질문 목록 템플릿 수정하기
+글쓴이를 표시하기 위해 테이블 헤더에 글쓴이 항목을 추가하자.
+- [파일명: C:\projects\mysite\templates\pybo\question_list.html]
+```python
+(... 생략 ...)
+<!-- ------------------------------- [edit] -------------------------------- -->
+<tr class="text-center thead-dark">
+<!-- ----------------------------------------------------------------------- -->
+    <th>번호</th>
+<!-- ------------------------------- [edit] -------------------------------- -->
+    <th style="width:50%">제목</th>
+    <th>글쓴이</th>
+<!-- ----------------------------------------------------------------------- -->
+    <th>작성일시</th>
+</tr>
+(... 생략 ...)
+```
+```python
+<th>글쓴이</th>를 추가했다. 
+그리고 th 엘리먼트를 가운데 정렬하도록 tr 엘리먼트에 text-center 
+클래스를 추가하고 제목의 너비가 전체에서 50%를 차지하도록 style="width:50%"도 지정해 주었다. 
+이어서 for 문에도 글쓴이를 적용하자.
+```
+- [파일명: C:\projects\mysite\templates\pybo\question_list.html]
+```python
+(... 생략 ...)
+{% for question in question_list %}
+<!-- ------------------------------- [edit] -------------------------------- -->
+<tr class="text-center">
+<!-- ----------------------------------------------------------------------- -->
+    <td>
+        <!-- 번호 = 전체건수 - 시작인덱스 - 현재인덱스 + 1 -->
+        {{ question_list.paginator.count|sub:question_list.start_index|sub:forloop.counter0|add:1 }}
+    </td>
+<!-- ------------------------------- [edit] -------------------------------- -->
+    <td class="text-left">
+<!-- ----------------------------------------------------------------------- -->
+        <a href="{% url 'pybo:detail' question.id %}">{{ question.subject }}</a>
+        {% if question.answer_set.count > 0 %}
+        <span class="text-danger small ml-2">{{ question.answer_set.count }}</span>
+        {% endif %}
+    </td>
+<!-- ------------------------------- [edit] -------------------------------- -->
+    <td>{{ question.author.username }}</td>  <!-- 글쓴이 추가 -->
+<!-- ----------------------------------------------------------------------- -->
+    <td>{{ question.create_date }}</td>
+</tr>
+{% endfor %}
+(... 생략 ...)
+```
+```python
+<td>{{ question.user.username }}</td>를 삽입하여 질문의 글쓴이를 표시했다. 
+그리고 테이블 내용을 가운데 정렬하도록 tr 엘리먼트에 text-center 클래스를 추가하고, 
+제목을 왼쪽 정렬하도록 text-left 클래스를 추가했다. 
+질문 목록 화면에 글쓴이가 추가되었다. 변경된 질문 목록 화면은 다음 그림과 같다.
+```
+
+~[](/img/글쓴이열.png)
+
+### 질문 상세 화면에 글쓴이 표시하기
+### [1] 질문 상세 템플릿 수정하기
+질문 상세 화면에도 다음과 같이 글쓴이를 추가하자.
+- [파일명: C:\projects\mysite\templates\pybo\question_detail.html]
+```python
+(... 생략 ...)
+<div class="card-body">
+    <div class="card-text" style="white-space: pre-line;">{{ question.content }}</div>
+    <div class="d-flex justify-content-end">
+<!-- ------------------------------- [edit] -------------------------------- -->
+        <div class="badge badge-light p-2 text-left">
+            <div class="mb-2">{{ question.author.username }}</div>
+            <div>{{ question.create_date }}</div>
+        </div>
+<!-- ----------------------------------------------------------------------- -->
+    </div>
+</div>
+(... 생략 ...)
+```
+글쓴이와 작성일시가 함께 보이도록 수정했다. 그리고 부트스트랩을 이용하여 여백과 정렬 등의 디자인도 살짝 변경했다.
+
+### [2] 답변에 글쓴이 표시 기능 추가하기
+- [파일명: C:\projects\mysite\templates\pybo\question_detail.html]
+```python
+(... 생략 ...)
+<div class="card-body">
+    <div class="card-text" style="white-space: pre-line;">{{ answer.content }}</div>
+    <div class="d-flex justify-content-end">
+<!-- ------------------------------- [edit] -------------------------------- -->
+        <div class="badge badge-light p-2 text-left">
+            <div class="mb-2">{{ answer.author.username }}</div>
+            <div>{{ answer.create_date }}</div>
+        </div>
+<!-- ----------------------------------------------------------------------- -->
+    </div>
+</div>
+(... 생략 ...)
+```
+질문 상세 화면의 질문과 답변에 글쓴이가 추가되었다.
+
+![](/img/질문상세화면2.png)
+
+### 3-09 게시물 수정 & 삭제 기능 추가하기
+```python
+이번에는 작성한 게시물을 수정 & 삭제할 수 있는 기능을 추가할 것이다. 
+실습을 진행하다 보면 '비슷한 기능을 반복해서 구현한다는 느낌'을 받아 조금 지루할 수 있다. 
+하지만 게시물 수정 & 삭제 기능은 게시물 작성만큼 중요하다. 장고 개발 패턴을 연습할 수 있는 좋은
+기회이므로 실습을 이해하며 따라가 보자.
+```
+
+### 모델 수정하기
+### [1] Question, Answer 모델에 modify_date 필드 추가하기
+질문, 답변을 언제 수정했는지 확인할 수 있도록 Question 모델과 Answer 모델에 
+수정일시를 의미하는 modify_date 필드를 추가하자.
+- [파일명: C:\projects\mysite\pybo\models.py]
+```python
+(... 생략 ...)
+
+class Question(models.Model):
+    (... 생략 ...)
+# ---------------------------------- [edit] ---------------------------------- #
+    modify_date = models.DateTimeField(null=True, blank=True)
+# ---------------------------------------------------------------------------- #
+    (... 생략 ...)
+
+class Answer(models.Model):
+    (... 생략 ...)
+# ---------------------------------- [edit] ---------------------------------- #
+    modify_date = models.DateTimeField(null=True, blank=True)
+# ---------------------------------------------------------------------------- #
+```
+```python
+null=True는 데이터베이스에서 modify_date 칼럼에 null을 허용한다는 의미이며,
+blank=True는 form.is_valid()를 통한 입력 폼 데이터 검사 시 값이 없어도 된다는 의미이다. 
+즉, null=True, blank=True는 어떤 조건으로든 값을 비워둘 수 있음을 의미한다.
+```
+수정일시는 수정한 경우에만 생성되는 데이터이므로 null=True, blank=True를 지정했다.
+
+### [2] makemigrations, migrate 명령 수행하기
+모델이 변경되었으므로 makemigrations, migrate 명령을 수행하자.
+- [명령 프롬프트]
+```python
+(mysite) c:\projects\mysite>python manage.py makemigrations
+Migrations for 'pybo':
+  pybo\migrations\0004_auto_20200331_0945.py
+    - Add field modify_date to answer
+    - Add field modify_date to question
+
+(mysite) c:\projects\mysite>python manage.py migrate
+Operations to perform:
+  Apply all migrations: admin, auth, contenttypes, pybo, sessions
+Running migrations:
+  Applying pybo.0004_auto_20200331_0945(... 생략 ...) OK
+
+(mysite) c:\projects\mysite>  
+```
+
+### 질문 수정 기능 추가하기
+### [1] 질문 수정 버튼 추가하기
+질문 상세 화면에 질문 수정 버튼을 추가하자.
+- [파일명: C:\projects\mysite\templates\pybo\question_detail.html]
+```python
+(... 생략 ...)
+<div class="card my-3">
+    <div class="card-body">
+        <div class="card-text" style="white-space: pre-line;">{{ question.content }}</div>
+        <div class="d-flex justify-content-end">
+            <div class="badge badge-light p-2 text-left">
+                <div class="mb-2">{{ question.author.username }}</div>
+                <div>{{ question.create_date }}</div>
+            </div>
+        </div>
+<!-- ------------------------------- [edit] -------------------------------- -->
+        {% if request.user == question.author %}
+        <div class="my-3">
+            <a href="{% url 'pybo:question_modify' question.id  %}" 
+               class="btn btn-sm btn-outline-secondary">수정</a>
+        </div>
+        {% endif %}
+<!-- ----------------------------------------------------------------------- -->
+    </div>
+</div>
+(... 생략 ...)
+```
+질문 수정 버튼은 로그인한 사용자와 글쓴이가 같은 경우에만 보여야 하므로 
+{% if request.user == question.author %}와 같이 추가했다.
+
+### [2] 질문 수정 버튼의 URL 매핑 추가하기
+{% url 'pybo:question_modify' question.id %} URL이 추가되었으니 pybo/urls.py 파일을 수정하여 
+URL 매핑을 추가해야 한다.
+
+- [파일명: C:\projects\mysite\pybo\urls.py]
+```python
+urlpatterns = [
+    (... 생략 ...)
+# ---------------------------------- [edit] ---------------------------------- #
+    path('question/modify/<int:question_id>/', views.question_modify, name='question_modify'),
+# ---------------------------------------------------------------------------- #
+    (... 생략 ...)
+]
+```
+
+### [3] 질문 수정 함수 추가하기
+URL 매핑에 등록한 views.question_modify 함수를 추가하자.
+- [파일명: C:\projects\mysite\pybo\views.py]
+```python
+# ---------------------------------- [edit] ---------------------------------- #
+from django.contrib import messages
+# ---------------------------------------------------------------------------- #
+(... 생략 ...)
+
+# ---------------------------------- [edit] ---------------------------------- #
+@login_required(login_url='common:login')
+def question_modify(request, question_id):
+    """
+    pybo 질문수정
+    """
+    question = get_object_or_404(Question, pk=question_id)
+    if request.user != question.author:
+        messages.error(request, '수정권한이 없습니다')
+        return redirect('pybo:detail', question_id=question.id)
+
+    if request.method == "POST":
+        form = QuestionForm(request.POST, instance=question)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.author = request.user
+            question.modify_date = timezone.now()  # 수정일시 저장
+            question.save()
+            return redirect('pybo:detail', question_id=question.id)
+    else:
+        form = QuestionForm(instance=question)
+    context = {'form': form}
+    return render(request, 'pybo/question_form.html', context)
+# ---------------------------------------------------------------------------- #
+```
