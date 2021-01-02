@@ -4212,3 +4212,199 @@ urlpatterns = [
     (... 생략 ...)
 ]
 ```
+{% url 'pybo:answer_modify' answer.id %}가 추가되었으므로 pybo/urls.py 파일에 URL 매핑을 추가해야 한다.
+- [파일명: C:\projects\mysite\pybo\urls.py]
+```python
+urlpatterns = [
+    (... 생략 ...)
+# ---------------------------------- [edit] ---------------------------------- #
+    path('answer/modify/<int:answer_id>/', views.answer_modify, name='answer_modify'),
+# ---------------------------------------------------------------------------- #
+    (... 생략 ...)
+]
+```
+
+### [3] 답변 수정 함수 추가하기
+계속해서 views.answer_modify 함수를 추가하자.
+- [파일명: C:\projects\mysite\pybo\views.py]
+```python
+(... 생략 ...)
+# ---------------------------------- [edit] ---------------------------------- #
+from .models import Question, Answer
+# ---------------------------------------------------------------------------- #
+(... 생략 ...)
+# ---------------------------------- [edit] ---------------------------------- #
+@login_required(login_url='common:login')
+def answer_modify(request, answer_id):
+    """
+    pybo 답변수정
+    """
+    answer = get_object_or_404(Answer, pk=answer_id)
+    if request.user != answer.author:
+        messages.error(request, '수정권한이 없습니다')
+        return redirect('pybo:detail', question_id=answer.question.id)
+
+    if request.method == "POST":
+        form = AnswerForm(request.POST, instance=answer)
+        if form.is_valid():
+            answer = form.save(commit=False)
+            answer.author = request.user
+            answer.modify_date = timezone.now()
+            answer.save()
+            return redirect('pybo:detail', question_id=answer.question.id)
+    else:
+        form = AnswerForm(instance=answer)
+    context = {'answer': answer, 'form': form}
+    return render(request, 'pybo/answer_form.html', context)
+# ---------------------------------------------------------------------------- #
+```
+
+### [4] 답변 수정 폼 작성하기
+답변 수정을 위한 템플릿 answer_form.html 파일은 별도로 만들어야 한다.
+파일 생성 후 다음과 같은 코드를 입력하자.
+- [파일명: C:\projects\mysite\templates\pybo\answer_form.html]
+```python
+<!-- ------------------------------- [edit] -------------------------------- -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-3">
+    <form method="post" class="post-form">
+        {% csrf_token %}
+        {% include "form_errors.html" %}
+        <div class="form-group">
+            <label for="content">답변내용</label>
+            <textarea class="form-control" name="content" id="content" 
+                      rows="10">{{ form.content.value|default_if_none:'' }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">저장하기</button>
+    </form>
+</div>
+{% endblock %}
+<!-- ----------------------------------------------------------------------- -->
+```
+답변 수정 기능도 질문 수정 기능과 마찬가지로 답변 등록 사용자와 로그인 사용자가 동일할 때만 
+<수정> 버튼이 나타난다. 답변 수정 기능이 잘 작동하는지 확인해 보자.
+
+![](/img/수정기능확인2.png)
+
+### [5] 답변 삭제 버튼 추가하기
+질문 상세 화면에 답변 삭제 버튼을 추가하자.
+- [파일명: C:\projects\mysite\templates\pybo\question_detail.html]
+```python
+(... 생략 ...)
+{% for answer in question.answer_set.all %}
+<div class="card my-3">
+    <div class="card-body">
+        (... 생략 ...)
+        {% if request.user == answer.author %}
+        <div class="my-3">
+            <a href="{% url 'pybo:answer_modify' answer.id  %}" 
+               class="btn btn-sm btn-outline-secondary">수정</a>
+<!-- ------------------------------- [edit] -------------------------------- -->
+            <a href="#" class="delete btn btn-sm btn-outline-secondary " 
+               data-uri="{% url 'pybo:answer_delete' answer.id  %}">삭제</a>
+<!-- ----------------------------------------------------------------------- -->
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+(... 생략 ...)
+```
+<수정> 버튼 옆에 <삭제> 버튼을 추가했다. 
+질문의 <삭제> 버튼과 마찬가지로 <삭제> 버튼에 delete 클래스를 적용했으므로 
+삭제> 버튼을 누르면 data-uri 속성에 설정한 url이 실행될 것이다.
+
+### [6] 답변 삭제 URL 매핑 추가하기
+{% url 'pybo:answer_delete' answer.id %}이 추가되었으므로 pybo/urls.py 파일에 URL 매핑을 추가하자.
+- [파일명: C:\projects\mysite\pybo\urls.py]
+```python
+urlpatterns = [
+    (... 생략 ...)
+# ---------------------------------- [edit] ---------------------------------- #
+    path('answer/delete/<int:answer_id>/', views.answer_delete, name='answer_delete'),
+# ---------------------------------------------------------------------------- #
+    (... 생략 ...)
+]
+```
+
+### [7] 답변 삭제 함수 추가하기
+URL 매핑에 의해 실행될 views.answer_delete 함수를 추가하자.
+- [파일명: C:\projects\mysite\pybo\views.py]
+```python
+(... 생략 ...)
+# ---------------------------------- [edit] ---------------------------------- #
+@login_required(login_url='common:login')
+def answer_delete(request, answer_id):
+    """
+    pybo 답변삭제
+    """
+    answer = get_object_or_404(Answer, pk=answer_id)
+    if request.user != answer.author:
+        messages.error(request, '삭제권한이 없습니다')
+    else:
+        answer.delete()
+    return redirect('pybo:detail', question_id=answer.question.id)
+# ---------------------------------------------------------------------------- #
+```
+이제 질문 상세 화면에서 답변을 작성한 사용자와 로그인한 사용자가 같으면 <삭제> 버튼이 나타날 것이다. 
+잘 작동하는지 확인해 보자.
+
+![](/img/삭제버튼.png)
+
+### 수정일시 표시하기
+마지막으로 질문 상세 화면에서 수정일시를 확인할 수 있도록 템플릿을 수정해 보자.
+### [1] 작성일시 왼쪽에 수정일시 추가하기
+질문과 답변에는 이미 작성일시를 표시하고 있다. 작성일시 바로 왼쪽에 수정일시를 추가하자.
+- [파일명: C:\projects\mysite\templates\pybo\question_detail.html]
+```python
+(... 생략 ...)
+<div class="card-body">
+    <div class="card-text" style="white-space: pre-line;">{{ question.content }}</div>
+    <div class="d-flex justify-content-end">
+<!-- ------------------------------- [edit] -------------------------------- -->
+        {% if question.modify_date %}
+        <div class="badge badge-light p-2 text-left mx-3">
+            <div class="mb-2">modified at</div>
+            <div>{{ question.modify_date }}</div>
+        </div>
+        {% endif %}
+<!-- ----------------------------------------------------------------------- -->
+        <div class="badge badge-light p-2 text-left">
+            <div class="mb-2">{{ question.author.username }}</div>
+            <div>{{ question.create_date }}</div>
+        </div>
+    </div>
+    (... 생략 ...)
+</div>
+(... 생략 ...)
+{% for answer in question.answer_set.all %}
+<div class="card my-3">
+    <div class="card-body">
+        <div class="card-text" style="white-space: pre-line;">{{ answer.content }}</div>
+        <div class="d-flex justify-content-end">
+<!-- ------------------------------- [edit] -------------------------------- -->
+            {% if answer.modify_date %}
+            <div class="badge badge-light p-2 text-left mx-3">
+                <div class="mb-2">modified at</div>
+                <div>{{ answer.modify_date }}</div>
+            </div>
+            {% endif %}
+<!-- ----------------------------------------------------------------------- -->
+            <div class="badge badge-light p-2 text-left">
+                <div class="mb-2">{{ answer.author.username }}</div>
+                <div>{{ answer.create_date }}</div>
+            </div>
+        </div>
+        (... 생략 ...)
+    </div>
+</div>
+{% endfor %}
+(... 생략 ...)
+```
+이제 질문이나 답변을 수정하면 다음처럼 수정일시가 표시될 것이다.
+
+![](/img/수정일시확인.png)
+
+### 3-10 댓글 기능 추가하기
