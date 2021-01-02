@@ -3776,3 +3776,55 @@ def question_create(request):
 ```
 
 ### [3] URL의 next 인자로 로그인 성공 후 이동할 URL 지정하기
+그런데 로그아웃 상태에서 '질문 등록하기'를 눌러 로그인 화면으로 전환된 
+상태에서 웹 브라우저 주소창의 URL을 보면 next 파라미터가 있을 것이다.
+
+![](/img/파라미터확인.png)
+
+### [4] 로그인 템플릿에 hidden 항목 추가하여 next 파라미터 활용하기
+로그인 후 next 파라미터에 있는 URL로 페이지를 
+이동하려면 로그인 템플릿에 다음과 같이 hidden 항목 next를 추가해야 한다.
+- [파일명: C:\projects\mysite\templates\common\login.html]
+```python
+(... 생략 ...)
+<form method="post" class="post-form" action="{% url 'common:login' %}">
+    {% csrf_token %}
+<!-- ------------------------------- [edit] -------------------------------- -->
+    <input type="hidden" name="next" value="{{ next }}">  <!-- 로그인 성공후 이동되는 URL -->
+<!-- ----------------------------------------------------------------------- -->
+    {% include "form_errors.html" %}
+(... 생략 ...)
+```
+그러면 로그인 후 next 파라미터의 URL로 이동할 수 있을 것이다.
+
+### [5] 로그아웃 상태에서 아예 글을 작성할 수 없게 만들기
+```python
+하나만 더 고쳐 보자. 
+현재 질문 등록은 로그아웃 상태에서는 아예 글을 작성할 수 없어서 만족스럽다. 
+하지만 답변 등록은 로그아웃 상태에서도 글을 작성할 수 있다. 
+물론 답변 작성 후 <저장하기>를 누르면 자동으로 로그인 화면으로 이동되므로 큰 문제는 아니지만
+'글을 작성할 수 있는 것처럼 보이는 현상'은 부자연스럽다. 로그아웃 상태에서 아예 답변을 작성할 수 
+없도록 만드는 방법은 disabled 속성을 사용하는 것이다. pybo/question_detail.html 파일을 다음과 같이 수정하자.
+```
+- [파일명: C:\projects\mysite\templates\pybo\question_detail.html]
+```python
+(... 생략 ...)
+<div class="form-group">
+<!-- ------------------------------- [edit] -------------------------------- -->
+    <textarea {% if not user.is_authenticated %}disabled{% endif %}
+              name="content" id="content" class="form-control" rows="10"></textarea>
+<!-- ----------------------------------------------------------------------- -->
+</div>
+<input type="submit" value="답변등록" class="btn btn-primary">
+(... 생략 ...)
+```
+로그인 상태가 아닌 경우 textarea 엘리먼트에 disabled 속성을 적용하여 입력을 못하게 만들었다.
+
+![](/img/입력창.png)
+
+### 3-08 글쓴이 표시하기
+```python
+앞서 Question 모델과 Answer 모델에 auther 필드를 추가했다. 
+게시판의 게시물에는 '글쓴이'를 표시하는 것이 일반적이다. 
+질문 목록, 질문 상세 화면에 auther 필드를 이용하여 글쓴이를 표시해 보자.
+```
