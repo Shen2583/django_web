@@ -4065,3 +4065,67 @@ def question_modify(request, question_id):
     return render(request, 'pybo/question_form.html', context)
 # ---------------------------------------------------------------------------- #
 ```
+question_modify 함수는 로그인한 사용자(request.user)와 수정하려는 글쓴이(question.author)가 다르면 
+'수정권한이 없습니다'라는 오류가 발생하도록 작성했다.
+
+ '수정권한이 없습니다' 오류를 발생시키기 위해 messages 모듈을 이용했다.
+- messages 모듈은 장고가 제공하는 함수로 오류를 임의로 발생시키고 싶은 경우에 사용한다. 이때 임의로 발생시킨 
+  오류는 폼 필드와 관련이 없으므로 넌필드 오류에 해당된다.
+- 03-5에서 필드, 넌필드 오류를 설명했다.
+
+질문 상세 화면에서 <수정>을 누르면 /pybo/question/modify/2/ 페이지가 GET 방식으로 호출되어 질문 수정 화면이 나타나고, 
+질문 수정 화면에서 <저장하기>를 누르면 /pybo/question/modify/2/ 페이지가 POST 방식으로 호출되어 데이터 수정이 이뤄진다.
+
+- 데이터 저장 시 form 엘리먼트에 action 속성이 없으면 현재의 페이지로 폼을 전송한다.
+- 질문 수정에서 사용한 템플릿은 질문 등록 시 사용한 pybo/question_form.html 파일을 그대로 사용한다.
+
+이때 GET 요청으로 질문 수정 화면이 나타날 때 기존에 저장되어 있던 제목, 
+내용이 반영된 상태에서 수정을 시작할 수 있도록 다음과 같이 폼을 생성했다.
+- [질문 수정 화면에 기존 제목, 내용 반영]
+```python
+form = QuestionForm(instance=question)
+```
+```python
+이처럼 instance 매개변수에 question을 지정하면 기존 값을 폼에 채울 수 있다. 
+그러면 사용자는 질문 수정 시 제목, 내용이 채워진 상태의 폼에서 수정을 시작할 수 있을 것이다.
+POST 요청으로 수정 내용을 반영하는 경우에는 다음과 같이 폼을 생성해야 한다.
+```
+
+- [질문 수정을 위해 값 덮어쓰기]
+```python
+form = QuestionForm(request.POST, instance=question)
+```
+위 코드는 조회한 질문 question을 기본값으로 하여 화면으로 전달받은 
+입력값들을 덮어써서 QuestionForm을 생성하라는 의미이다. 그리고 질문의 수정일시는 다음처럼 현재일시로 저장했다.
+- [질문 수정일시를 현재일시로 저장]
+```python
+question.modify_date = timezone.now() 
+```
+
+### [4] 질문 수정 확인하기
+이제 로그인 사용자와 글쓴이가 같으면 질문 상세 화면에 <수정> 버튼이 보일 것이다.
+
+~[](/img/수정기능확인.png)
+
+### 질문 삭제 기능 추가하기
+이제 질문을 삭제하는 기능을 추가해 보자. 다음처럼 <수정> 버튼 바로 옆에 <삭제> 버튼을 추가하자.
+- [파일명: C:\projects\mysite\templates\pybo\question_detail.html]
+```python
+(... 생략 ...)
+{% endblock %}
+<!-- ------------------------------- [edit] -------------------------------- -->
+{% block script %}
+<script type='text/javascript'>
+$(document).ready(function(){
+    $(".delete").on('click', function() {
+        if(confirm("정말로 삭제하시겠습니까?")) {
+            location.href = $(this).data('uri');
+        }
+    });
+});
+</script>
+{% endblock %}
+<!-- ----------------------------------------------------------------------- -->
+```
+
+### [5] 질문 삭제 URL 매핑 추가하기
