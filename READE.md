@@ -4129,3 +4129,86 @@ $(document).ready(function(){
 ```
 
 ### [5] 질문 삭제 URL 매핑 추가하기
+그리고 data-uri 속성에 {% url 'pybo:question_delete' question.id %}이 추가되었으므로 
+pybo/urls.py 파일에 URL 매핑을 추가해야 한다.
+- [파일명: C:\projects\mysite\pybo\urls.py]
+```python
+urlpatterns = [
+    (... 생략 ...)
+# ---------------------------------- [edit] ---------------------------------- #
+    path('question/delete/<int:question_id>/', views.question_delete, name='question_delete'),
+# ---------------------------------------------------------------------------- #
+    (... 생략 ...)
+]
+```
+
+### [6] 질문 삭제 함수 추가하기
+URL 매핑에 추가한 views.question_delete 함수를 다음처럼 작성하자.
+- [파일명: C:\projects\mysite\pybo\views.py]
+```python
+(... 생략 ...)
+# ---------------------------------- [edit] ---------------------------------- #
+@login_required(login_url='common:login')
+def question_delete(request, question_id):
+    """
+    pybo 질문삭제
+    """
+    question = get_object_or_404(Question, pk=question_id)
+    if request.user != question.author:
+        messages.error(request, '삭제권한이 없습니다')
+        return redirect('pybo:detail', question_id=question.id)
+    question.delete()
+    return redirect('pybo:index')
+# ---------------------------------------------------------------------------- #
+```
+question_delete 함수 역시 로그인이 필요하므로 @login_required 애너테이션을 적용하고 로그인한 
+사용자와 글쓴이가 동일한 경우에만 삭제할 수 있도록 했다.
+
+질문 글쓴이와 로그인 사용자가 동일하면 질문 상세 화면에 이제 <삭제> 버튼이 나타날 것이다.
+삭제가 잘 실행되는지 확인해 보자.
+
+![](/img/삭제기능확인.png)
+
+### 답변 수정 & 삭제 기능 추가하기
+이번에는 답변 수정 & 삭제 기능을 추가하자. 
+질문 수정 & 삭제 기능과 거의 비슷한 구성으로 실습을 진행한다. 
+다만 답변 수정은 답변 등록 템플릿이 따로 없으므로 답변 수정에 사용할 템플릿이 추가로 필요하다.
+
+- 답변 등록은 질문 상세 화면 아래쪽에 텍스트 입력 창을 추가하여 만든 것이므로 질문 상세 템플릿을 답변 수정용으로 사용하는 데는 적합하지 않다.
+- 답변 수정 & 삭제 기능은 질문 수정 & 삭제 기능과 크게 차이 나지 않으므로 간단히 설명하고 넘어가겠다.
+
+### [1] 답변 수정 버튼 추가하기
+답변 목록이 출력되는 부분에 답변 수정 버튼을 추가하자.
+- [파일명: C:\projects\mysite\templates\pybo\question_detail.html]
+```python
+(... 생략 ...)
+{% for answer in question.answer_set.all %}
+<div class="card my-3">
+    <div class="card-body">
+        (... 생략 ...)
+<!-- ------------------------------- [edit] -------------------------------- -->
+        {% if request.user == answer.author %}
+        <div class="my-3">
+            <a href="{% url 'pybo:answer_modify' answer.id  %}" 
+               class="btn btn-sm btn-outline-secondary">수정</a>
+        </div>
+        {% endif %}
+<!-- ----------------------------------------------------------------------- -->
+    </div>
+</div>
+{% endfor %}
+(... 생략 ...)
+```
+
+### [2] 답변 수정 URL 매핑 추가하기
+{% url 'pybo:answer_modify' answer.id %}가 추가되었으므로 pybo/urls.py 파일에 URL 매핑을 추가해야 한다.
+- [파일명: C:\projects\mysite\pybo\urls.py]
+```python
+urlpatterns = [
+    (... 생략 ...)
+# ---------------------------------- [edit] ---------------------------------- #
+    path('answer/modify/<int:answer_id>/', views.answer_modify, name='answer_modify'),
+# ---------------------------------------------------------------------------- #
+    (... 생략 ...)
+]
+```
