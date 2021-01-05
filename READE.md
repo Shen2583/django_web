@@ -5099,3 +5099,88 @@ Date:   Thu Apr 23 18:39:25 2020 +0900
 ```
 
 ### 4-02 깃허브 사용해 보기
+```python
+깃을 사용하여 로컬 저장소를 생성하고 소스 코드를 관리하는 방법을 배웠다. 
+하지만 프로젝트는 보통 여럿이 진행하므로 원격 저장소가 반드시 필요하다. 
+물론 개인 프로젝트라 하더라도 코드의 유실을 방지하려면 원격 저장소는 필수이다. 
+여기서는 깃을 지원하는 원격 저장소 중에서 가장 유명한 깃허브(Github)를 어떻게 사용하는지 알아본다.
+
+원격 저장소는 컴퓨터에 있는 로컬 저장소가 아닌 인터넷의 다른 공간에 있는 저장소를 말한다.
+
+깃허브는 마이크로소프트에서 운영하는 깃 지원 호스팅 서비스이다. 
+현재 사용자가 4,000만명 이상이고 4,400만 개가 넘는 신규 저장소가 있다고 하니 그 인기가 어마어마하다. 
+깃허브는 오픈소스 지원 정책에 따라 무료로 사용할 수 있다.
+```
+
+### 깃허브 가입하고 원격 저장소 사용해 보기
+[1] 깃허브 가입하기
+깃허브를 사용해 본 적이 없다면 공식 홈페이지에서 회원가입하자. 
+깃허브 공식 홈페이지에 접속한 다음 오른쪽 위에 있는 <Sign up>을 누르고 이어서 필수 항목을 입력한 다음 
+<Sign up for Github>를 누르면 된다. 가입 절차가 간단하므로 여기서는 생략한다.
+
+![](/img/깃허브회원가입.png)
+
+### [2] 깃허브에 원격 저장소 생성하기
+깃허브를 원격 저장소로 사용하려면 파이보의 로컬 저장소와 깃허브의 원격 저장소를 연결해야 한다 . 
+깃허브에 로그인 하고 <Create repository>를 누르자.
+
+![](/img/저장소만들기.png)
+
+이미 깃허브를 사용한다면 'Repositories'의 <New>를 누르자.
+
+![](/img/저장소만들기버튼.png)
+
+그러면 원격 저장소를 생성하는 페이지가 나타난다. 
+'Repository name'에 'pybo'를 입력하고 <Create repository>를 눌러 원격 저장소를 생성하자.
+
+![](/img/저장소만드는과정.png)
+
+그러면 원격 저장소의 URL을 확인하는 화면이 나타난다. 이 URL은 로컬 저장소와 연결할 때 사용되므로 기억해야 한다.
+
+- 현재 필자의 원격 저장소 URL: github.com/pahkey/pybo.git
+- 필자가 만든 원격 저장소 URL의 pahkey는 깃허브 아이디로 자동 생성된 것이므로 여러분의 원격 저장소 URL과 다르다.
+
+![](/img/원격저장소.png)
+
+### [3] 로컬 저장소와 원격 저장소 연결하고 저장하기
+이제 로컬 저장소와 원격 저장소를 연결하자.
+C:/projects/mysite 디렉터리에서 git remote add origin <원격 저장소 URL> 명령을 수행하자.
+- [명령 프롬프트]
+```python
+(mysite) c:\projects\mysite>git remote add origin https://github.com/pahkey/pybo.git
+```
+명령어를 입력할 때에는 아이디(pahkey) 부분에 주의하자. 
+이어서 git push -u origin master 명령으로 로컬 저장소의 내용을 원격 저장소에 저장하자.
+- [명령 프롬프트]
+```python
+(mysite) c:\projects\mysite>git push -u origin master
+Username for 'https://github.com': pahkey
+Password for 'https://pahkey@github.com':
+Enumerating objects: 62, done.
+Counting objects: 100% (62/62), done.
+Delta compression using up to 4 threads
+Compressing objects: 100% (58/58), done.
+Writing objects: 100% (62/62), 85.01 KiB | 3.40 MiB/s, done.
+Total 62 (delta 14), reused 0 (delta 0)
+remote: Resolving deltas: 100% (14/14), done.
+To https://github.com/pahkey/pybo.git
+ * [new branch]      master -> master
+Branch 'master' set up to track remote branch 'master' from 'origin'.
+```
+'Username'과 'Password'를 요구하면 여러분의 깃허브 아이디와 비밀번호를 입력하면 된다.
+입력을 마치면 원격 저장소에 로컬 저장소 내용이 저장된다.
+
+![](/img/gitpush입력.png)
+
+이제 깃허브 홈페이지에 접속해서 원격 저장소에 파일들이 정상적으로 저장되었는지 확인하자.
+
+![](/img/정상적저장.png)
+
+- [원격 저장소에 저장된 코드]
+
+작업한 내용을 원격 저장소에 저장하는 순서 간단 정리
+
+프로그램 변경 작업하기
+git add <파일명> 또는 git add * 명령 수행하기
+git commit -m "변경사항 요약" 명령 수행하기
+git push 명령 수행하기
